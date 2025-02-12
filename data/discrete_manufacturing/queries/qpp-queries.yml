@@ -1,0 +1,11 @@
+  - question: What are the parts that make up TLA with uid 41938?
+    cql: |-
+      MATCH p=(:TLA)-[:HAS_CHILD {tla_uid: '41938'}]->(:Item)
+      (
+      ()-[r:HAS_CHILD]->()
+      WHERE r.tla_uid = '41938'
+      )+
+      (:Item) 
+      WITH nodes(p) as lst
+      UNWIND lst as n
+      RETURN DISTINCT n.item_uid as item_uid, n.description as description
