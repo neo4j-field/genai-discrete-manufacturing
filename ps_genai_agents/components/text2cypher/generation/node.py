@@ -30,7 +30,7 @@ def create_text2cypher_generation_node(
         """
 
         examples: str = cypher_example_retriever.get_examples(
-            **{"query": state.get("subquestion", ""), "k": 5}
+            **{"query": state.get("subquestion", ""), "k": 8}
         )
 
         # print("\n\nExamples: ", examples, "\n\n")
