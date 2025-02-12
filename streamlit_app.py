@@ -7,9 +7,11 @@ from typing import Any, Dict, List
 import streamlit as st
 from dotenv import load_dotenv
 from langchain_neo4j import Neo4jGraph
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from neo4j import GraphDatabase
 
-from ps_genai_agents.retrievers.cypher_examples import YAMLCypherExampleRetriever
+
+from ps_genai_agents.retrievers.cypher_examples import Neo4jVectorSearchCypherExampleRetriever
 from ps_genai_agents.ui.components import chat, display_chat_history, sidebar
 from ps_genai_agents.workflows.multi_agent import (
     create_text2cypher_with_visualization_workflow,
@@ -48,8 +50,11 @@ def initialize_state(
     """
 
     if "agent" not in st.session_state:
-        cypher_example_retriever = YAMLCypherExampleRetriever(
-            cypher_query_yaml_file_path=cypher_query_yaml_file_path
+        embedder = OpenAIEmbeddings(model="text-embedding-ada-002")
+        neo4j_driver = GraphDatabase.driver(uri=os.getenv("NEO4J_URI"), auth=(os.getenv("NEO4J_USERNAME"), os.getenv("NEO4J_PASSWORD")))
+        vector_index_name = "cypher_query_vector_index"
+        cypher_example_retriever = Neo4jVectorSearchCypherExampleRetriever(
+            embedder=embedder, neo4j_driver=neo4j_driver,vector_index_name=vector_index_name
         )
         st.session_state["llm"] = ChatOpenAI(model="gpt-4o", temperature=0.0)
         st.session_state["graph"] = Neo4jGraph(

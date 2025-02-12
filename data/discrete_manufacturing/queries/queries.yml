@@ -71,5 +71,39 @@ queries:
       WITH tla_uid,i.planning_make_buy_code_description AS indicator
       WITH tla_uid, CASE WHEN indicator="Make" THEN 1 ELSE 0 END AS make_indicator,CASE WHEN indicator="Buy" THEN 1 ELSE 0 END AS buy_indicator
       RETURN tla_uid, sum(make_indicator) AS no_of_make_parts,sum(buy_indicator) AS no_of_buy_parts;
+  - question: What was the total costs for Q1 2024?
+    cql: |-
+      MATCH (c:Cost) 
+      WHERE c.time_period = "Q1" AND c.year = 2024
+      RETURN SUM(c.item_cost) as total_cost,
+             SUM(c.material_cost) as total_material_cost,
+             SUM(c.resource_cost) as total_resource_cost
+  - question: What products contributed most to the total cost of Q4 2023?
+    cql: |-
+      MATCH (c:Cost)<-[:HAS_COST]-(n:FinishedGood)
+      WHERE c.time_period = "Q4" AND c.year = 2023
+      WITH COLLECT(c.item_cost) AS item_cost_list
+      WITH REDUCE(total = 0, cost IN item_cost_list | total + cost) AS total_quarter_cost
+
+      WITH total_quarter_cost
+
+      MATCH (c:Cost)<-[:HAS_COST]-(n:FinishedGood)
+      WHERE c.time_period = "Q4" AND c.year = 2023
+      RETURN n.tla_item_uid as tla_item_uid, 
+            c.item_cost as item_cost, 
+            total_quarter_cost
+      LIMIT 5
+  - question: Visualize item counts for some TLAs.
+    cql: |-
+      MATCH p=(n:TLA)-[:HAS_CHILD]->(i:Item) 
+      RETURN n.tla_item_uid as tla_item_id,
+             COUNT(i) as item_count
+      LIMIT 10
+  - question: What are some resource costs associated with TLAs?
+    cql: |- 
+      MATCH (n:TLA)-[:HAS_COST]->(c:Cost)
+      WHERE c.resource_cost IS NOT NULL
+      RETURN DISTINCT n.tla_item_uid as tla_item_uid, c.resource_cost as resource_cost
+
 
 
